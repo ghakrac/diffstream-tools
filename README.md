@@ -19,7 +19,7 @@ Recommended for production hypervisors, backup servers, and storage nodes:
 
 ```bash
 ./build_pkg.sh 1.0.0
-sudo apt install ./diffstream-tools_1.0.0_\$(dpkg --print-architecture).deb
+sudo apt install ./diffstream-tools_1.0.0_$(dpkg --print-architecture).deb
 ```
 
 ### Option 2: Ephemeral One-Liner Compile (Rescue ISOs / Minimal Hosts)
