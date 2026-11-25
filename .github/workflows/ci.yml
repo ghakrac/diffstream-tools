@@ -1,0 +1,25 @@
+name: Build & Package
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Compile with strict warnings
+        run: |
+          for src in diffstream thindiffstream zfsdiffstream blkstream; do
+            g++ -O3 -std=c++17 -Wall -Wextra -Werror -o "$src" "${src}.cpp"
+          done
+
+      - name: Build .deb package
+        run: |
+          chmod +x build_pkg.sh
+          ./build_pkg.sh 1.0.0
+          dpkg-deb --info diffstream-tools_1.0.0_*.deb
+          dpkg-deb --contents diffstream-tools_1.0.0_*.deb

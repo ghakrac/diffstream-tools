@@ -1,0 +1,10 @@
+# Compiled binaries
+/diffstream
+/thindiffstream
+/zfsdiffstream
+/blkstream
+
+# Packaging & build artifacts
+*.deb
+*.tar.gz
+/diffstream-tools_*/

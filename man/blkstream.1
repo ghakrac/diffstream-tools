@@ -1,0 +1,40 @@
+.TH BLKSTREAM 1 "2026-11-24" "diffstream-tools 1.0.0" "System Administration"
+.SH NAME
+blkstream \- raw block device to DIFFSTR1 sparse/discard stream tool
+.SH SYNOPSIS
+.B blkstream
+.B \-\-source
+.IR dev_or_file
+.RB [ \-\-truncate
+.IR size ]
+.RB [ \-\-nocache ]
+.RB [ \-v ]
+.SH DESCRIPTION
+.B blkstream
+reads a raw block device or disk image sequentially, detects zero-filled regions at 64 KiB granularity, and emits a wire-compatible
+.B DIFFSTR1
+stream (OP_TRUNCATE, OP_DATA, coalesced OP_HOLE, OP_EOF) for P2V migration or sparse replication.
+.SH OPTIONS
+.TP
+.BI \-\-source " dev_or_file"
+Source block device (e.g., /dev/sda, /dev/md0) or image file. Also accepts \fB\-\-change\fR as a CLI alias.
+.TP
+.B \-\-nocache
+Advise sequential reads and drop pages via posix_fadvise(2).
+.TP
+.BR \-v ", " \-\-verbose
+Print throughput, bytes written, and bytes discarded to stderr.
+.TP
+.BI \-\-truncate " size"
+Clamp source stream size to \fIsize\fR (supports K/M/G/T suffixes) for V2P migration onto smaller disks.
+.SH EXAMPLES
+.TP
+.B P2V migration from physical RAID array to sparse VM image:
+blkstream --source /dev/md0 --nocache -v | zstd -T0 | ssh vm-host "zstd -d | diffstream --apply --target /var/lib/libvirt/images/vm.img --nocache"
+.TP
+.B Clamp a 100G disk stream onto an 80G target block device:
+blkstream --source /dev/sda --truncate 80G --nocache -v | diffstream --apply --target /dev/nvme0n1 --noresize --taildiscard --nocache
+.SH SEE ALSO
+.BR diffstream (1),
+.BR thindiffstream (1),
+.BR zfsdiffstream (1)

@@ -1,0 +1,62 @@
+.TH DIFFSTREAM 1 "2026-11-24" "diffstream-tools 1.0.0" "System Administration"
+.SH NAME
+diffstream \- XFS and Btrfs reflink extent diff & universal stream apply utility
+.SH SYNOPSIS
+.B diffstream
+\-\-diff [--base file] --change file [\-\-truncate size] [\-\-nocache] [\-v]
+.br
+.B diffstream
+\-\-apply \-\-target file_or_dev [\-\-nocache] [\-\-noresize] [\-\-taildiscard]
+.br
+.B diffstream
+[--base file] --change file \-\-target file_or_dev [\-\-truncate size] [\-\-nocache] [\-\-noresize] [\-\-taildiscard] [\-v]
+.SH DESCRIPTION
+.B diffstream
+computes block-level differences via FS_IOC_FIEMAP and emits or applies a wire-compatible
+.B DIFFSTR1
+stream (OP_TRUNCATE, OP_DATA, OP_HOLE, OP_EOF).
+.SH OPTIONS
+.TP
+.B \-\-diff
+Emit a binary DIFFSTR1 delta stream to stdout.
+.TP
+.B \-\-apply
+Read a DIFFSTR1 stream from stdin and apply to \fB\-\-target\fR.
+.TP
+.BI \-\-base " src"
+Baseline snapshot (if omitted, emits full sparse-aware stream including OP_HOLE packets for unmapped regions).
+.TP
+.BI \-\-change " src"
+Modified snapshot to diff.
+.TP
+.BI \-\-target " dst"
+Destination file, LV, ZVOL, or block device.
+.TP
+.B \-\-nocache
+Drop page cache pages via sync_file_range(2) and posix_fadvise(2).
+.TP
+.B \-\-noresize
+Do not resize target on OP_TRUNCATE (required for fixed block devices). Fails if target < source.
+.TP
+.B \-\-taildiscard
+With \fB\-\-noresize\fR, discard/zero trailing bytes past source EOF via BLKZEROOUT or FALLOC_FL_PUNCH_HOLE.
+.TP
+.BR \-v ", " \-\-verbose
+Print transfer statistics to stderr.
+.TP
+.BI \-\-truncate " size"
+Clamp source stream size to \fIsize\fR (supports K/M/G/T suffixes) for V2P migration onto smaller disks.
+.SH EXAMPLES
+.TP
+.B Local one-command sync:
+diffstream --base snap1.img --change snap2.img --target /backup/vm.img --nocache -v
+.TP
+.B Remote reflink backup over Zstd + SSH:
+diffstream --diff --base snap1.img --change snap2.img --nocache -v | zstd -T0 | ssh backup-host "zstd -d | diffstream --apply --target /srv/backups/vm.img --nocache"
+.TP
+.B V2P migration of a shrunk 100G VM image onto an 80G NVMe drive:
+diffstream --diff --change shrunk_100g.img --truncate 80G --nocache -v | diffstream --apply --target /dev/nvme0n1 --noresize --taildiscard --nocache
+.SH SEE ALSO
+.BR thindiffstream (1),
+.BR zfsdiffstream (1),
+.BR blkstream (1)
